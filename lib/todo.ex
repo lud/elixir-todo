@@ -45,7 +45,7 @@ defmodule TODO do
     print_todo_item(module, item, app_version, mode)
   end
 
-  def print_todo_item(module, {version, message}, app_version, mode) do
+  defp print_todo_item(module, {version, message}, app_version, mode) do
     # print a versionned message
     version = to_string version
     message = format_message(module, version, message)
@@ -65,25 +65,25 @@ defmodule TODO do
     output_todo(outconf, message)
   end
 
-  def print_todo_item(module, message, app_version, mode) do
+  defp print_todo_item(module, message, app_version, mode) do
     # print a bare message
     message = format_message(module, message)
     output_todo(:info, message)
   end
 
-  def format_message(module, version, message) do
+  defp format_message(module, version, message) do
     "@todo in #{module} for v#{version}: " <> message
   end
-  def format_message(module, message) do
+  defp format_message(module, message) do
     "@todo in #{module}: " <> message
   end
 
-  def output_todo(:ignore, message), do: nil
-  def output_todo(:warn, message) do
+  defp output_todo(:ignore, message), do: nil
+  defp output_todo(:warn, message) do
     Shell.print_app
     IO.puts :stderr, IO.ANSI.format(yellow(message))
   end
-  def output_todo(:info, message) do
+  defp output_todo(:info, message) do
     Shell.print_app
    IO.puts IO.ANSI.format message
   end

@@ -1,8 +1,8 @@
-# A simple Todo utiliy
+# A simple Todo utiliy for Elixir
 
-Todo is a small macro that helps you procrastinate more when you write code.
+Todo is a small macro that helps you procrastinate more when you write Elixir code.
 
-Just put todo messages in your code and they will be printed at compile time, there is no overhead at runtime.
+Just put todo messages in your code and they will be printed at compile time ; there is no overhead at runtime.
 
 
 ```elixir
