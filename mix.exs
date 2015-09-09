@@ -5,15 +5,13 @@ defmodule Todo.Mixfile do
     [app: :todo,
      version: "0.0.1",
      elixir: "~> 1.0",
-     description: "Blanket covers your tables ! Don't loose your ETS tables with Elixir.",
+     description: "A small TODO comments utility.",
      package: [
        contributors: ["Ludovic Demblans"],
        licenses: ["MIT"],
        links: %{
-         "GitHub" => "https://github.com/niahoo/blanket",
-         "Hex Docs" => "http://hexdocs.pm/blanket",
-         "Don't loose your ETS tables" => "http://steve.vinoski.net/blog/2011/03/23/dont-lose-your-ets-tables/",
-         "Erlang inspiration" => "https://github.com/DeadZen/etsgive"
+         "GitHub" => "https://github.com/niahoo/elixir-todo",
+         "Hex Docs" => "http://hexdocs.pm/todo"
        }
      ],
      deps: deps]
