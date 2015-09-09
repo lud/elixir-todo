@@ -49,7 +49,7 @@ defmodule MyApp.MyMod do
 end
 ```
 
-If you want to seed all the messages, including those whose version number is not reached yet, add `print: :all` :
+If you want to print all the messages, including those whose version number is not reached yet, add `print: :all` :
 
 
 ```elixir
