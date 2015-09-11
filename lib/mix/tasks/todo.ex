@@ -1,0 +1,29 @@
+defmodule Mix.Tasks.Todo do
+  use Mix.Task
+  alias Mix.Shell.IO, as: Shell
+
+  @shortdoc "List all todos items for the current project"
+
+  def run(_) do
+    config = Mix.Project.config
+    app = config[:app]
+    appfile = Application.app_dir(app) <> "/ebin/#{app}.app"
+
+    Shell.info "Reading modules from #{appfile} ..."
+    read_app :file.consult(appfile)
+  end
+
+  def read_app({:error, :enoent}) do
+    Shell.error "File missing. App not compiled ?"
+  end
+  def read_app({:ok, [data]}) do
+    {:application, app, infos} = data
+    infos[:modules] |> Enum.map(&read_module/1)
+  end
+
+  def read_module(module) do
+    module.module_info(:attributes)[:todo]
+    |> TODO.output_todos(module, "0.0.0", :all)
+  end
+
+end

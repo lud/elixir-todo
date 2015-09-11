@@ -11,8 +11,9 @@ defmodule TODO do
 
   defmacro __using__(opts) do
     print_conf = config(:print, :overdue)
+    persist = config(:persist, false)
     quote do
-      Module.register_attribute(__MODULE__, :todo, accumulate: true)
+      Module.register_attribute(__MODULE__, :todo, accumulate: true, persist: unquote(persist))
       @before_compile unquote(__MODULE__)
       @todo_version Mix.Project.config[:version]
       @todo_print_conf (case {Keyword.get(unquote(opts), :print), unquote(print_conf)} do
@@ -31,7 +32,12 @@ defmodule TODO do
   defmacro __before_compile__(env) do
     app_version = Module.get_attribute(env.module, :todo_version)
     print_conf = Module.get_attribute(env.module, :todo_print_conf)
-    case Module.get_attribute(env.module, :todo) do
+    Module.get_attribute(env.module, :todo)
+    |> output_todos(env.module, app_version, print_conf)
+  end
+
+  def output_todos(todos, module, app_version, print_conf) do
+    case todos do
       [] -> nil
       nil -> nil
       items ->
@@ -43,7 +49,7 @@ defmodule TODO do
         |> Enum.map(fn({version, ts}) -> {version, Enum.reverse ts} end)
         |> Enum.reverse
         |> format_todos(app_version, print_conf)
-        |> (fn(x) -> [format_module(env.module), x] end).()
+        |> (fn(x) -> [format_module(module), x] end).()
         |> IO.puts
     end
   end
@@ -74,7 +80,7 @@ defmodule TODO do
   def format_todos([{version, ts}|rest], app_version, print_conf) do
     current = case display_mode(version, app_version, print_conf) do
       :ignore -> []
-      :info -> [format_version(version), Enum.map(ts, &format_message/1)]
+      :info -> [format_version(version), format_messages(ts)]
       :warn -> IO.ANSI.format(yellow([format_version(version), Enum.map(ts, &format_message/1)]))
     end
     [current|format_todos(rest, app_version, print_conf)]
@@ -85,14 +91,22 @@ defmodule TODO do
   end
 
   def format_version(:any) do
-    "\n * later"
+    format_version("Other")
   end
   def format_version(version) do
-    ["\n * ", to_string version]
+    ["\n * ", to_string(version), " :"]
+  end
+
+  def format_messages([message|[]]) do
+    # A single message => same line
+    [" ", message]
+  end
+  def format_messages(messages) do
+    Enum.map(messages, &(["\n     - ", &1]))
   end
 
   def format_message(message) do
-    ["\n     - ", message]
+
   end
 
   def display_mode(:any, _, _) do
