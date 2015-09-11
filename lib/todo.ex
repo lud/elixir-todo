@@ -31,23 +31,21 @@ defmodule TODO do
   defmacro __before_compile__(env) do
     app_version = Module.get_attribute(env.module, :todo_version)
     print_conf = Module.get_attribute(env.module, :todo_print_conf)
-
     case Module.get_attribute(env.module, :todo) do
-      [] ->
-        nil
+      [] -> nil
+      nil -> nil
       items ->
-        items
+        [items]
         |> List.flatten
         |> Enum.map(&wrap_unversionned/1)
         |> Enum.sort(&sort_todos/2)
-        |> Enum.reduce(&group_todos/2)
+        |> Enum.reduce([], &group_todos/2)
         |> Enum.map(fn({version, ts}) -> {version, Enum.reverse ts} end)
         |> Enum.reverse
         |> format_todos(app_version, print_conf)
         |> (fn(x) -> [format_module(env.module), x] end).()
         |> IO.puts
     end
-    # print_todos(env.module, todos, app_version, print_conf)
   end
 
   # put unversionned last
