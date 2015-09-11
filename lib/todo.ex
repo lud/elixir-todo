@@ -4,15 +4,28 @@ defmodule TODO do
 
   alias Mix.Shell.IO, as: Shell
 
+  def config(key, default \\ nil) do
+    case Application.get_env(:todo, key) do
+      nil -> default
+      x -> x
+    end
+  end
+
   defmacro __using__(opts) do
+    print_mode = config(:print, :overdue)
     quote do
       Module.register_attribute(__MODULE__, :todo, accumulate: true)
       @before_compile unquote(__MODULE__)
       @todo_version Mix.Project.config[:version]
-      @todo_print_mode Keyword.get(unquote(opts), :print, :overdue)
+      @todo_print_mode (case {Keyword.get(unquote(opts), :print), unquote(print_mode)} do
+        {:all,_} -> :all
+        {_,:all} -> :all
+        _ -> :overdue
+      end)
 
       defmacrop todo(items) do
-        TODO.print_todos(__MODULE__, items, @todo_version, @todo_print_mode)
+        # TODO.print_todos(__MODULE__, items, @todo_version, @todo_print_mode)
+        Module.put_attribute(__MODULE__, :todo, items)
       end
     end
   end

@@ -30,6 +30,7 @@ Add the dependency in your `mix.exs` file.
   end
 ```
 
+
 ### How to use
 
 Just leave a `@todo` attribute in a module body, or use the `todo` macro inside functions. Both take the same arguments:
@@ -49,16 +50,33 @@ defmodule MyApp.MyMod do
 end
 ```
 
-If you want to print all the messages, including those whose version number is not reached yet, add `print: :all` :
 
+
+### Configuration
+
+#### `:print`
+
+The print option accepts two values : `:all` or `:overdue`.
+
+`:overdue` is the default, only unversionned and features whose version is outdated are shown. `:all` … prints all.
+
+You can configure this at the project level in `mix.exs` or per module.
+
+```elixir
+config :todo, :print, :all
+```
 
 ```elixir
 defmodule MyApp.MyMod do
   use TODO, print: :all
 
-  # ...
-
-end
 ```
+
+Wherever it's set, `:all` always win.
+
+
+The opposite value is `:overdue`. If `:all` is set for the whole project, you can disable this
+
+### Notes
 
 You may want to have a look at [fixme](https://github.com/henrik/fixme-elixir) too, which inspired this project.
