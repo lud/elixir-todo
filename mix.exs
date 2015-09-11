@@ -3,7 +3,7 @@ defmodule Todo.Mixfile do
 
   def project do
     [app: :todo,
-     version: "0.0.2",
+     version: "0.1.0",
      elixir: "~> 1.0",
      description: "A small TODO comments utility.",
      package: [

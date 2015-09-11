@@ -2,8 +2,6 @@ defmodule TODO do
 
   @moduledoc File.read!(__DIR__ <> "/../README.md")
 
-  alias Mix.Shell.IO, as: Shell
-
   def config(key, default \\ nil) do
     case Application.get_env(:todo, key) do
       nil -> default
@@ -12,57 +10,99 @@ defmodule TODO do
   end
 
   defmacro __using__(opts) do
-    print_mode = config(:print, :overdue)
+    print_conf = config(:print, :overdue)
     quote do
       Module.register_attribute(__MODULE__, :todo, accumulate: true)
       @before_compile unquote(__MODULE__)
       @todo_version Mix.Project.config[:version]
-      @todo_print_mode (case {Keyword.get(unquote(opts), :print), unquote(print_mode)} do
+      @todo_print_conf (case {Keyword.get(unquote(opts), :print), unquote(print_conf)} do
         {:all,_} -> :all
         {_,:all} -> :all
         _ -> :overdue
       end)
 
       defmacrop todo(items) do
-        # TODO.print_todos(__MODULE__, items, @todo_version, @todo_print_mode)
+        # TODO.print_todos(__MODULE__, items, @todo_version, @todo_print_conf)
         Module.put_attribute(__MODULE__, :todo, items)
       end
     end
   end
 
   defmacro __before_compile__(env) do
-    todos =
-      Module.get_attribute(env.module, :todo)
-      |> List.flatten
-      |> Enum.sort(fn({v1,_}, {v2,_}) -> v1 < v2
-                     # put unversionned last
-                     ({_,_}, v2) when is_binary(v2) -> true
-                     (v1, {_,_}) when is_binary(v1) -> false
-      end)
     app_version = Module.get_attribute(env.module, :todo_version)
-    mode = Module.get_attribute(env.module, :todo_print_mode)
-    print_todos(env.module, todos, app_version, mode)
+    print_conf = Module.get_attribute(env.module, :todo_print_conf)
+
+    case Module.get_attribute(env.module, :todo) do
+      [] ->
+        nil
+      items ->
+        items
+        |> List.flatten
+        |> Enum.map(&wrap_unversionned/1)
+        |> Enum.sort(&sort_todos/2)
+        |> Enum.reduce(&group_todos/2)
+        |> Enum.map(fn({version, ts}) -> {version, Enum.reverse ts} end)
+        |> Enum.reverse
+        |> format_todos(app_version, print_conf)
+        |> (fn(x) -> [format_module(env.module), x] end).()
+        |> IO.puts
+    end
+    # print_todos(env.module, todos, app_version, print_conf)
   end
 
+  # put unversionned last
+  def wrap_unversionned(x={_version, _message}), do: x
+  def wrap_unversionned(message), do: {:any, message}
 
-  @doc false
-  def print_todos(module, [], app_version, mode) do
-    nil
+  def sort_todos({_,_}, {:any, _}), do: true
+  def sort_todos({:any, _}, {_,_}), do: false
+  def sort_todos({v1,_}, {v2,_}), do: v1 < v2
+
+  def group_todos({same_version, t}, [{same_version,ts}|rest]) do
+    result = [{same_version,[t|ts]}|rest]
+    result
   end
-  def print_todos(module, [item|items], app_version, mode) do
-    print_todos(module, item, app_version, mode)
-    print_todos(module, items, app_version, mode)
+  def group_todos(item, {version,t}) do
+    # first accumulator is not a list, it's a todo item, wrap and redo
+    group_todos(item, [{version, [t]}])
+  end
+  def group_todos({version, t}, rest) do
+    [{version,[t]}|rest]
   end
 
-  def print_todos(module, item, app_version, mode) do
-    print_todo_item(module, item, app_version, mode)
+  def format_todos([], _, _) do
+    []
+  end
+  def format_todos([{version, ts}|rest], app_version, print_conf) do
+    current = case display_mode(version, app_version, print_conf) do
+      :ignore -> []
+      :info -> [format_version(version), Enum.map(ts, &format_message/1)]
+      :warn -> IO.ANSI.format(yellow([format_version(version), Enum.map(ts, &format_message/1)]))
+    end
+    [current|format_todos(rest, app_version, print_conf)]
   end
 
-  defp print_todo_item(module, {version, message}, app_version, mode) do
-    # print a versionned message
+  def format_module(atom) do
+    ["@todos found in module ", to_string atom]
+  end
+
+  def format_version(:any) do
+    "\n * later"
+  end
+  def format_version(version) do
+    ["\n * ", to_string version]
+  end
+
+  def format_message(message) do
+    ["\n     - ", message]
+  end
+
+  def display_mode(:any, _, _) do
+    :info
+  end
+  def display_mode(version, app_version, print_conf) do
     version = to_string version
-    message = format_message(module, version, message)
-    outconf = case {Version.compare(version, app_version), mode} do
+    case {Version.compare(version, app_version), print_conf} do
       {:gt, :all} ->
         # Version when the feature is required is greater than the current
         # version, it's not overdue, but we're asked to print all.
@@ -71,34 +111,10 @@ defmodule TODO do
         # Same case, but we must print only overdue items, so no-print
         :ignore
       _ ->
-        # App version reached the version for the feature. It should have been
-        # done before bumping the app version.
+        # App version is higher than feature version. The feature is due for a
+        # past version. This is not good.
         :warn
     end
-    output_todo(outconf, message)
-  end
-
-  defp print_todo_item(module, message, app_version, mode) do
-    # print a bare message
-    message = format_message(module, message)
-    output_todo(:info, message)
-  end
-
-  defp format_message(module, version, message) do
-    "@todo in #{module} for v#{version}: " <> message
-  end
-  defp format_message(module, message) do
-    "@todo in #{module}: " <> message
-  end
-
-  defp output_todo(:ignore, message), do: nil
-  defp output_todo(:warn, message) do
-    Shell.print_app
-    IO.puts :stderr, IO.ANSI.format(yellow(message))
-  end
-  defp output_todo(:info, message) do
-    Shell.print_app
-   IO.puts IO.ANSI.format message
   end
 
   defp yellow(message) do
