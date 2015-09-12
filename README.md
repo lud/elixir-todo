@@ -4,6 +4,8 @@ Todo is a small macro that helps you procrastinate more when you write Elixir co
 
 Just put todo messages in your code and they will be printed at compile time ; there is no overhead at runtime.
 
+A mix command is available to scan all modules for todo items and print all at once.
+
 
 ```elixir
 defmodule MyApp.MyMod do
@@ -51,6 +53,11 @@ end
 ```
 
 
+### Mix command
+
+Todos messages printed at compilation time are interleaved with compilation messages. Hence the color of ouverdue features. The command allows for a simpler way to read all the messages.
+
+Enter `mix todo` in your console to print all the todos of the current project at once. This requires `@todo` attributes to be persistant. See the configuration to enable persistance.
 
 ### Configuration
 
@@ -74,8 +81,23 @@ defmodule MyApp.MyMod do
 
 Wherever it's set, `:all` always win.
 
+#### `:persist`
 
-The opposite value is `:overdue`. If `:all` is set for the whole project, you can disable this
+The persistancee option makes the `@todo` module attributes persitant, enabling the mix command. It accepts a boolean value.
+
+You can configure this at the project level in `mix.exs` or per module.
+
+```elixir
+config :todo, :persist, true
+```
+
+```elixir
+defmodule MyApp.MyMod do
+  use TODO, persist: true
+
+```
+
+Wherever it's set, `true` always win.
 
 ### Notes
 

@@ -9,7 +9,7 @@ defmodule Mix.Tasks.Todo do
     app = config[:app]
     appfile = Application.app_dir(app) <> "/ebin/#{app}.app"
 
-    Shell.info "Reading modules from #{appfile} ..."
+    # Shell.info "Reading modules from #{appfile} ..."
     read_app :file.consult(appfile)
   end
 

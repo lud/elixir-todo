@@ -13,7 +13,8 @@ defmodule TODO do
     print_conf = config(:print, :overdue)
     persist = config(:persist, false)
     quote do
-      Module.register_attribute(__MODULE__, :todo, accumulate: true, persist: unquote(persist))
+      persist = unquote(persist) || unquote(opts[:persist])
+      Module.register_attribute(__MODULE__, :todo, accumulate: true, persist: persist)
       @before_compile unquote(__MODULE__)
       @todo_version Mix.Project.config[:version]
       @todo_print_conf (case {Keyword.get(unquote(opts), :print), unquote(print_conf)} do
