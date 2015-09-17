@@ -22,8 +22,9 @@ defmodule Mix.Tasks.Todo do
   end
 
   def read_module(module) do
-    module.module_info(:attributes)[:todo]
-    |> TODO.output_todos(module, "0.0.0", :all)
+    module.module_info(:attributes)
+    |> Keyword.get_values(:todo)
+    |> TODO.output_todos(module, Mix.Project.config[:version], :all)
   end
 
 end

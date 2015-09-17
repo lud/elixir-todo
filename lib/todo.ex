@@ -82,7 +82,7 @@ defmodule TODO do
     current = case display_mode(version, app_version, print_conf) do
       :ignore -> []
       :info -> [format_version(version), format_messages(ts)]
-      :warn -> IO.ANSI.format(yellow([format_version(version), Enum.map(ts, &format_message/1)]))
+      :warn -> IO.ANSI.format(yellow([format_version(version), format_messages(ts)]))
     end
     [current|format_todos(rest, app_version, print_conf)]
   end
@@ -104,10 +104,6 @@ defmodule TODO do
   end
   def format_messages(messages) do
     Enum.map(messages, &(["\n     - ", &1]))
-  end
-
-  def format_message(message) do
-
   end
 
   def display_mode(:any, _, _) do
