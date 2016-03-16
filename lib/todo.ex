@@ -47,7 +47,7 @@ defmodule TODO do
         |> Enum.map(&wrap_unversionned/1)
         |> Enum.sort(&sort_todos/2)
         |> Enum.reduce([], &group_todos/2)
-        |> Enum.map(fn({version, ts}) -> {version, Enum.reverse ts} end)
+        |> Enum.map(fn({version, ts}) -> {version, ts} end)
         |> Enum.reverse
         |> format_todos(app_version, print_conf)
         |> (fn(x) -> [format_module(module), x] end).()
@@ -81,20 +81,20 @@ defmodule TODO do
   def format_todos([{version, ts}|rest], app_version, print_conf) do
     current = case display_mode(version, app_version, print_conf) do
       :ignore -> []
-      :info -> [format_version(version), format_messages(ts)]
-      :warn -> IO.ANSI.format(yellow([format_version(version), format_messages(ts)]))
+      :info -> [format_version(version, length(ts)), format_messages(ts)]
+      :warn -> IO.ANSI.format(yellow([format_version(version, length(ts)), format_messages(ts)]))
     end
     [current|format_todos(rest, app_version, print_conf)]
   end
 
   def format_module(atom) do
-    ["@todos found in module ", to_string atom]
+    ["@todos in ", to_string atom]
   end
 
   def format_version(:any) do
-    format_version("Other")
+    format_version("No version")
   end
-  def format_version(version) do
+  def format_version(version, _) do
     ["\n * ", to_string(version), " :"]
   end
 
@@ -103,7 +103,7 @@ defmodule TODO do
     [" ", message]
   end
   def format_messages(messages) do
-    Enum.map(messages, &(["\n     - ", &1]))
+    Enum.map(messages, &(["\n    - ", &1]))
   end
 
   def display_mode(:any, _, _) do

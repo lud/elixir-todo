@@ -5,6 +5,7 @@ defmodule Mix.Tasks.Todo do
   @shortdoc "List all todos items for the current project"
 
   def run(_) do
+    Mix.Task.run "compile"
     config = Mix.Project.config
     app = config[:app]
     appfile = Application.app_dir(app) <> "/ebin/#{app}.app"
@@ -17,7 +18,7 @@ defmodule Mix.Tasks.Todo do
     Shell.error "File missing. App not compiled ?"
   end
   def read_app({:ok, [data]}) do
-    {:application, app, infos} = data
+    {:application, _app, infos} = data
     infos[:modules] |> Enum.map(&read_module/1)
   end
 

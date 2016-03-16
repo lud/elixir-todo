@@ -55,9 +55,11 @@ end
 
 ### Mix command
 
+This requires `@todo` attributes to be persistant. See the configuration to enable persistance.
+
 Todos messages printed at compilation time are interleaved with compilation messages. Hence the color of ouverdue features. The command allows for a simpler way to read all the messages.
 
-Enter `mix todo` in your console to print all the todos of the current project at once. This requires `@todo` attributes to be persistant. See the configuration to enable persistance.
+Enter `mix todo` in your console to print all the todos of the current project at once.
 
 ### Configuration
 
