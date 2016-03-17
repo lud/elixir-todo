@@ -10,9 +10,9 @@ defmodule TODO do
   end
 
   defmacro __using__(opts) do
-    print_conf = config(:print, :overdue)
     persist = config(:persist, false)
-    print_conf = case {Keyword.get(opts, :print), print_conf} do
+    global_print_conf = config(:print, :overdue)
+    print_conf = case {Keyword.get(opts, :print), global_print_conf} do
       {:all,_} -> :all
       {_,:all} -> :all
       _ -> :overdue
