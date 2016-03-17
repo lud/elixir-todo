@@ -12,16 +12,17 @@ defmodule TODO do
   defmacro __using__(opts) do
     print_conf = config(:print, :overdue)
     persist = config(:persist, false)
+    print_conf = case {Keyword.get(opts, :print), print_conf} do
+      {:all,_} -> :all
+      {_,:all} -> :all
+      _ -> :overdue
+    end
     quote do
       persist = unquote(persist) || unquote(opts[:persist])
       Module.register_attribute(__MODULE__, :todo, accumulate: true, persist: persist)
       @before_compile unquote(__MODULE__)
       @todo_version Mix.Project.config[:version]
-      @todo_print_conf (case {Keyword.get(unquote(opts), :print), unquote(print_conf)} do
-        {:all,_} -> :all
-        {_,:all} -> :all
-        _ -> :overdue
-      end)
+      @todo_print_conf unquote(print_conf)
 
       defmacrop todo(items) do
         # TODO.print_todos(__MODULE__, items, @todo_version, @todo_print_conf)
