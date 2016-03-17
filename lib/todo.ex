@@ -2,24 +2,36 @@ defmodule TODO do
 
   @moduledoc File.read!(__DIR__ <> "/../README.md")
 
-  def config(key, default \\ nil) do
+  @defaults %{
+    :persist => false,
+    :print => :overdue
+  }
+
+  def config_default(:persist), do: false
+  def config_default(:print), do: :overdue
+
+  def config(key) do
     case Application.get_env(:todo, key) do
-      nil -> default
+      nil -> config_default(key)
       x -> x
     end
   end
 
+  def validate_print_conf(nil), do: :ok
+  def validate_print_conf(:all), do: :ok
+  def validate_print_conf(:overdue), do: :ok
+  def validate_print_conf(:silent), do: :ok
+  def validate_print_conf(value) do
+    raise "Bad print configuration value #{inspect value}."
+  end
+
   defmacro __using__(opts) do
-    persist = config(:persist, false)
-    global_print_conf = config(:print, :overdue)
-    print_conf = case {Keyword.get(opts, :print), global_print_conf} do
-      {:all,_} -> :all
-      {_,:all} -> :all
-      _ -> :overdue
-    end
+    # anything that is not false result in persisting = true. default is false
+    print_conf = Keyword.get(opts, :print, config(:print))
+    persist_conf = false !== Keyword.get(opts, :persist, config(:persist))
+    validate_print_conf(print_conf)
     quote do
-      persist = unquote(persist) || unquote(opts[:persist])
-      Module.register_attribute(__MODULE__, :todo, accumulate: true, persist: persist)
+      Module.register_attribute(__MODULE__, :todo, accumulate: true, persist: unquote(persist_conf))
       @before_compile unquote(__MODULE__)
       @todo_version Mix.Project.config[:version]
       @todo_print_conf unquote(print_conf)
@@ -34,10 +46,13 @@ defmodule TODO do
   defmacro __before_compile__(env) do
     app_version = Module.get_attribute(env.module, :todo_version)
     print_conf = Module.get_attribute(env.module, :todo_print_conf)
-    Module.get_attribute(env.module, :todo)
-    |> output_todos(env.module, app_version, print_conf)
+    if print_conf !== :silent do
+      Module.get_attribute(env.module, :todo)
+      |> output_todos(env.module, app_version, print_conf)
+    end
   end
 
+  def output_todos(_, _, _, :silent), do: :ok
   def output_todos(todos, module, app_version, print_conf) do
     case todos do
       [] -> nil
@@ -82,8 +97,8 @@ defmodule TODO do
   def format_todos([{version, ts}|rest], app_version, print_conf) do
     current = case display_mode(version, app_version, print_conf) do
       :ignore -> []
-      :info -> [format_version(version, length(ts)), format_messages(ts)]
-      :warn -> IO.ANSI.format(yellow([format_version(version, length(ts)), format_messages(ts)]))
+      :info -> [format_version(version), format_messages(ts)]
+      :warn -> IO.ANSI.format(yellow([format_version(version), format_messages(ts)]))
     end
     [current|format_todos(rest, app_version, print_conf)]
   end
@@ -95,7 +110,7 @@ defmodule TODO do
   def format_version(:any) do
     format_version("No version")
   end
-  def format_version(version, _) do
+  def format_version(version) do
     ["\n * ", to_string(version), " :"]
   end
 
@@ -107,9 +122,8 @@ defmodule TODO do
     Enum.map(messages, &(["\n    - ", &1]))
   end
 
-  def display_mode(:any, _, _) do
-    :info
-  end
+  def display_mode(_, _, :silent), do: :ignore
+  def display_mode(:any, _, _), do: :info
   def display_mode(version, app_version, print_conf) do
     version = to_string version
     case {Version.compare(version, app_version), print_conf} do
