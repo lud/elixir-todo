@@ -7,7 +7,7 @@ defmodule Todo.Mixfile do
      elixir: "~> 1.4",
      description: "A small TODO comments utility.",
      package: [
-       contributors: ["Ludovic Demblans"],
+       maintainers: ["niahoo osef <dev@ooha.in>"],
        licenses: ["MIT"],
        links: %{
          "GitHub" => "https://github.com/niahoo/elixir-todo"
