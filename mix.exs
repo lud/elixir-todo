@@ -3,8 +3,8 @@ defmodule Todo.Mixfile do
 
   def project do
     [app: :todo,
-     version: "1.2.0",
-     elixir: "~> 1.0",
+     version: "1.3.0",
+     elixir: "~> 1.4",
      description: "A small TODO comments utility.",
      package: [
        contributors: ["Ludovic Demblans"],
@@ -22,8 +22,7 @@ defmodule Todo.Mixfile do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.8.4", only: :dev},
-      {:earmark, ">= 0.0.0", only: :dev},
+      {:ex_doc, "~> 0.8", only: :dev},
     ]
   end
 end

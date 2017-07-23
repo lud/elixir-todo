@@ -61,10 +61,10 @@ defmodule TODO do
         [items]
         |> List.flatten
         |> Enum.map(&wrap_unversionned/1)
-        |> Enum.sort(&sort_todos/2)
-        |> Enum.reduce([], &group_todos/2)
-        |> Enum.map(fn({version, ts}) -> {version, ts} end)
-        |> Enum.reverse
+        |> Enum.reduce(%{}, &group_todos/2)
+        |> Enum.sort(&sort_versions/2)
+        |> Enum.into([])
+        # |> Enum.reverse # invert sort versions
         |> format_todos(app_version, print_conf)
         |> (fn(x) -> [format_module(module), x] end).()
         |> IO.puts
@@ -75,20 +75,13 @@ defmodule TODO do
   def wrap_unversionned(x={_version, _message}), do: x
   def wrap_unversionned(message), do: {:any, message}
 
-  def sort_todos({_,_}, {:any, _}), do: true
-  def sort_todos({:any, _}, {_,_}), do: false
-  def sort_todos({v1,_}, {v2,_}), do: v1 < v2
+  def sort_versions({_,_}, {:any, _}), do: true
+  def sort_versions({:any, _}, {_,_}), do: false
+  def sort_versions({v1,_}, {v2,_}), do: v1 < v2
 
-  def group_todos({same_version, t}, [{same_version,ts}|rest]) do
-    result = [{same_version,[t|ts]}|rest]
-    result
-  end
-  def group_todos(item, {version,t}) do
-    # first accumulator is not a list, it's a todo item, wrap and redo
-    group_todos(item, [{version, [t]}])
-  end
-  def group_todos({version, t}, rest) do
-    [{version,[t]}|rest]
+  # @todo "Cons into list and reverse after all grouping is done"
+  def group_todos({version, t}, acc) do
+    Map.update(acc, version, [t], fn(todos) -> todos ++ [t] end)
   end
 
   def format_todos([], _, _) do
