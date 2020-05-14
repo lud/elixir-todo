@@ -11,7 +11,7 @@ defmodule Todo.Mixfile do
         contributors: ["Ludovic Demblans"],
         licenses: ["MIT"],
         links: %{
-          "GitHub" => "https://github.com/niahoo/elixir-todo"
+          "GitHub" => "https://github.com/lud/elixir-todo"
         }
       ],
       deps: deps
