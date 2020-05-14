@@ -8,10 +8,10 @@ defmodule TodoTest do
 
   def f do
     todo "This message should be shown as an info"
+
     todo "0.0.0": "This message should be shown as a WARNING",
          "99.99.99": "This message SHOULD NOT BE SHOWN at compile time"
   end
-
 end
 
 defmodule TodoTestPrintAll do
@@ -26,10 +26,10 @@ defmodule TodoTestPrintAll do
 
   def f do
     todo "This message should be shown as an info"
-    todo "0.0.0": "This message should be shown as a WARNING",
-        "99.99.99": "This message should be shown as an info"
-  end
 
+    todo "0.0.0": "This message should be shown as a WARNING",
+         "99.99.99": "This message should be shown as an info"
+  end
 end
 
 defmodule TodoTestPrintSilent do
@@ -44,8 +44,8 @@ defmodule TodoTestPrintSilent do
 
   def f do
     todo "This message should not be shown at compile time"
-    todo "0.0.0": "This message should not be shown at compile time",
-        "99.99.99": "This message should not be shown at compile time"
-  end
 
+    todo "0.0.0": "This message should not be shown at compile time",
+         "99.99.99": "This message should not be shown at compile time"
+  end
 end
