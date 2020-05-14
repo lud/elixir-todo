@@ -28,7 +28,7 @@ Add the dependency in your `mix.exs` file.
 
 ```elixir
   defp deps do
-    [{:todo, "> 1.0.0"}]
+    [{:todo, "~> 1.4"}]
   end
 ```
 
