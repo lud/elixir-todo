@@ -2,50 +2,45 @@ defmodule TodoTest do
   use ExUnit.Case
   use TODO
 
-  @todo "This message should be shown as an info"
-  @todo "0.0.0": "This message should be shown as a WARNING",
-        "99.99.99": "This message SHOULD NOT BE SHOWN at compile time"
+  @todo "XX This todo has no version"
+  @todo "0.0.0": "This todo should be always a warning",
+        "999.999.999": "This message should not be shown without --all",
+        "bad.version": "This should be tagged as invalid"
 
   def f do
-    todo "This message should be shown as an info"
+    todo "XX This todo has no version too"
 
-    todo "0.0.0": "This message should be shown as a WARNING",
-         "99.99.99": "This message SHOULD NOT BE SHOWN at compile time"
+    todo "0.0.0": "This message is always outdate",
+         "999.999.999": "Cannot be seen without --all"
   end
-end
 
-defmodule TodoTestPrintAll do
-  use ExUnit.Case
-  use TODO, print: :all
+  # test "get module todos" do
+  #   __MODULE__
+  #   |> TODO.get_todos()
+  #   |> IO.inspect(label: "module todos")
+  # end
 
-  @todo_version "0.2.0"
-
-  @todo "This message should be shown as an info"
-  @todo "0.1.0": "This message should be shown as a WARNING",
-        "99.99.99": "This message should be shown as an info"
-
-  def f do
-    todo "This message should be shown as an info"
-
-    todo "0.0.0": "This message should be shown as a WARNING",
-         "99.99.99": "This message should be shown as an info"
+  defmodule SubModA do
+    use TODO
+    @todo "XX Unversionned todo in submod A"
+    @todo "0.0.0": "Versionned todo in submod A"
   end
-end
 
-defmodule TodoTestPrintSilent do
-  use ExUnit.Case
-  use TODO, print: :silent
+  defmodule SubModB do
+    use TODO
+    @todo "XX Unversionned todo in submod B"
+    @todo "0.0.0": "Versionned todo in submod B"
+  end
 
-  @todo_version "0.2.0"
+  test "get multiple modules todos" do
+    todos =
+      [__MODULE__, SubModA, SubModB]
+      |> TODO.get_todos()
+      |> IO.inspect(label: "multi module todos")
 
-  @todo "This message should not be shown at compile time"
-  @todo "0.1.0": "This message should not be shown at compile time",
-        "99.99.99": "This message should not be shown at compile time"
-
-  def f do
-    todo "This message should not be shown at compile time"
-
-    todo "0.0.0": "This message should not be shown at compile time",
-         "99.99.99": "This message should not be shown at compile time"
+    IO.puts("Print all")
+    TODO.output_todos(todos, :all, Version.parse!("1.0.0"))
+    # IO.puts("Print overdue for 1.0.0")
+    # TODO.output_todos(todos, :overdue, Version.parse!("1.0.0"))
   end
 end
