@@ -34,7 +34,6 @@ defmodule TODO do
   end
 
   defmacro todo(items) do
-    __CALLER__.module |> IO.inspect(label: "__CALLER__.module")
     Module.put_attribute(__CALLER__.module, :todo, items)
     nil
   end
@@ -118,7 +117,7 @@ defmodule TODO do
     |> IO.puts()
 
     if length(unversionned) > 0 do
-      output_vsn_group(unversionned, version_title("Unversionned"), :normal)
+      output_vsn_group(unversionned, version_title("Unversionned"), :normal, width)
       |> IO.puts()
     end
 
@@ -128,7 +127,7 @@ defmodule TODO do
 
       title = version_title(vsn, mode)
 
-      output_vsn_group(todos, title, mode)
+      output_vsn_group(todos, title, mode, width)
       |> IO.puts()
     end)
   end
@@ -150,12 +149,12 @@ defmodule TODO do
       else: :normal
   end
 
-  defp output_vsn_group(todos, title, mode) do
+  defp output_vsn_group(todos, title, mode, width) do
     todos_by_mods =
       todos
       |> group_by_module()
       |> Enum.map(fn {module, todos} ->
-        todolist = Enum.map(todos, &["– ", todo_to_string(&1), "\n"])
+        todolist = Enum.map(todos, &["– ", todo_to_string(&1, width, 2), "\n"])
 
         {todolist, module_color} =
           case mode do
@@ -177,6 +176,39 @@ defmodule TODO do
     [title, "\n\n", todos_by_mods]
   end
 
+  defp wrap_block(str, width, indent) do
+    line_prefix = String.duplicate(" ", indent)
+
+    str
+    # Splitting block on two consecutive line breaks to preserve paragraphs but
+    # not simple breaks
+    |> String.split("\n\n")
+    |> Enum.map(&wrap_line(&1, width - indent, line_prefix))
+    |> Enum.intersperse("\n\n")
+  end
+
+  defp wrap_line(str, width, line_prefix) do
+    words =
+      str
+      |> String.replace("\n", " ")
+      |> String.split(" ", trim: true)
+
+    Enum.reduce(words, {[], 0}, fn word, {line, len} ->
+      wlen = String.length(word)
+
+      if wlen + len > width do
+        {[word, ["\n", line_prefix] | line], wlen}
+      else
+        case len do
+          0 -> {[word | line], len + wlen + 1}
+          _ -> {[word, " " | line], len + wlen + 1}
+        end
+      end
+    end)
+    |> elem(0)
+    |> :lists.reverse()
+  end
+
   defp group_by_module(todos) do
     todos
     |> Enum.group_by(&elem(&1, 1))
@@ -195,12 +227,14 @@ defmodule TODO do
     [apply(IO.ANSI, col, []), msg, IO.ANSI.default_color()]
   end
 
-  defp todo_to_string({_, _, msg}) do
+  defp todo_to_string({_, _, msg}, width, indent) do
     if is_binary(msg) do
-      String.trim(msg)
+      msg
     else
-      String.trim(inspect(msg))
+      inspect(msg)
     end
+    |> String.trim()
+    |> wrap_block(width, indent)
   end
 
   defp overdue?(vsn, max_vsn) do
