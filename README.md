@@ -1,4 +1,4 @@
-# A simple Todo utiliy for Elixir
+# A simple Todo utility for Elixir
 
 Todo is a small macro that helps you procrastinate more when you write Elixir code.
 
