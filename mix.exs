@@ -24,7 +24,7 @@ defmodule Todo.Mixfile do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.22", only: :dev}
+      {:ex_doc, "~> 0.26", only: :dev}
     ]
   end
 end
