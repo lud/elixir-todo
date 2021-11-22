@@ -35,7 +35,7 @@ defmodule TODO do
 
   defmacro todo(items) do
     Module.put_attribute(__CALLER__.module, :todo, items)
-    nil
+    []
   end
 
   defp spawn_prod_persist_warning() do
@@ -43,12 +43,9 @@ defmodule TODO do
 
     case Process.whereis(name) do
       nil ->
-        print_hang = fn ->
-          print_warning()
-          Process.sleep(:infinity)
-        end
-
-        Process.register(spawn(print_hang), name)
+        print_warning()
+        holder = spawn(fn -> Process.sleep(:infinity) end)
+        Process.register(holder, name)
 
       _ ->
         :ok
@@ -67,7 +64,7 @@ defmodule TODO do
   end
 
   def get_todos(module) when is_atom(module) do
-    for {:todo, sublist} <- module.__info__(:attributes) do
+    for {:todo, sublist} <- module.module_info(:attributes) do
       sublist
     end
     |> :lists.flatten()
@@ -173,7 +170,7 @@ defmodule TODO do
       end)
       |> Enum.intersperse("\n")
 
-    [title, "\n\n", todos_by_mods]
+    [title, "\n\n", todos_by_mods, "\n"]
   end
 
   defp wrap_block(str, width, indent) do
