@@ -112,8 +112,13 @@ shows only persistent attributes. It accepts a boolean value :
   through the Elixir module API.
 - `false` : todos will only be available at compile time.
 
-The default value is `false` when `Mix.env()` is `:prod` at compile time, `true`
-otherwise, so the command works out of the box with all modules.
+The default value is `true` so the command works out of the box with all
+modules. It should be set to `false` in production environment.
+
+```elixir
+config :todo, persist: false
+```
+
 
 ### Notes
 

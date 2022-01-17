@@ -6,9 +6,7 @@ defmodule TODO do
              |> String.split("<!-- moduledoc start -->")
              |> Enum.at(1)
 
-  @is_prod Mix.env() == :prod
-
-  def config_default(:persist), do: not @is_prod
+  def config_default(:persist), do: true
   def config_default(:print), do: :overdue
 
   def config(key) do
@@ -26,6 +24,10 @@ defmodule TODO do
   defmacro __using__(opts) do
     persist_conf = false !== Keyword.get(opts, :persist, config(:persist))
 
+    if persist_conf and Mix.env() not in ~w(dev test)a do
+      warn_persist_in_prod()
+    end
+
     quote do
       Module.register_attribute(__MODULE__, :todo,
         accumulate: true,
@@ -33,6 +35,25 @@ defmodule TODO do
       )
 
       import TODO, only: [todo: 1]
+    end
+  end
+
+  defp warn_persist_in_prod() do
+    case :persistent_term.get(:todo_prod_warning, false) do
+      true ->
+        :ok
+
+      _ ->
+        :persistent_term.put(:todo_prod_warning, true)
+
+        IO.warn("""
+        TODO attributes are persisted whereas environment is neither :dev nor :test.
+
+        You can disable persistence in your configuration, for instance in
+        config/prod.exs :
+
+            config :todo, persist: false
+        """)
     end
   end
 
