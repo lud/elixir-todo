@@ -1,5 +1,10 @@
 defmodule TODO do
-  @moduledoc File.read!(__DIR__ <> "/../README.md")
+  @readme File.cwd!() |> Path.join("README.md")
+  @external_resource @readme
+  @moduledoc @readme
+             |> File.read!()
+             |> String.split("<!-- moduledoc start -->")
+             |> Enum.at(1)
 
   @is_prod Mix.env() == :prod
 
