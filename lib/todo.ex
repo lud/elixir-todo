@@ -1,7 +1,9 @@
 defmodule TODO do
   @moduledoc File.read!(__DIR__ <> "/../README.md")
 
-  def config_default(:persist), do: true
+  @is_prod Mix.env() == :prod
+
+  def config_default(:persist), do: not @is_prod
   def config_default(:print), do: :overdue
 
   def config(key) do
@@ -19,10 +21,6 @@ defmodule TODO do
   defmacro __using__(opts) do
     persist_conf = false !== Keyword.get(opts, :persist, config(:persist))
 
-    if persist_conf and Mix.env() not in ~w(dev test)a do
-      spawn_prod_persist_warning()
-    end
-
     quote do
       Module.register_attribute(__MODULE__, :todo,
         accumulate: true,
@@ -34,33 +32,9 @@ defmodule TODO do
   end
 
   defmacro todo(items) do
-    Module.put_attribute(__CALLER__.module, :todo, items)
-    []
-  end
-
-  defp spawn_prod_persist_warning() do
-    name = :todo_prod_warning_process
-
-    case Process.whereis(name) do
-      nil ->
-        print_warning()
-        holder = spawn(fn -> Process.sleep(:infinity) end)
-        Process.register(holder, name)
-
-      _ ->
-        :ok
+    quote do
+      @todo unquote(items)
     end
-  end
-
-  defp print_warning() do
-    IO.warn("""
-    TODO attributes are persisted whereas environment is neither :dev nor :test.
-
-    You can disable persistence in your configuration, for instance in
-    config/prod.exs :
-
-        config :todo, persist: false
-    """)
   end
 
   def get_todos(module) when is_atom(module) do
@@ -110,7 +84,7 @@ defmodule TODO do
     width = min(width, 70)
 
     # Main title
-    [String.pad_trailing("-- TODO ", width, "-"), "\n"]
+    [?\n, IO.ANSI.cyan(), String.pad_trailing("-- TODO ", width, "-"), IO.ANSI.reset(), ?\n, ?\n]
     |> IO.puts()
 
     if length(unversionned) > 0 do
@@ -242,12 +216,22 @@ defmodule TODO do
     do: version_title("Version #{vsn}")
 
   defp version_title(%Version{} = vsn, :warn),
-    do: color(version_title("Version #{vsn} – OVERDUE"), :light_red)
+    do: [version_title("Version #{vsn} – "), color("OVERDUE", :light_red)]
 
   defp version_title(title),
     do: "# #{title}"
 
   defp format_module_link(module) do
+    # for {f, 0} <- IO.ANSI.module_info(:exports), f not in [:reset, :clear] do
+    #   IO.puts([
+    #     String.pad_trailing(to_string(f), 50),
+    #     ": ",
+    #     apply(IO.ANSI, f, []),
+    #     "sample text",
+    #     IO.ANSI.reset()
+    #   ])
+    # end
+
     case get_module_source(module) do
       nil -> []
       path -> [color([" ", path], :light_black)]
