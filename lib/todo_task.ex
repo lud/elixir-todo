@@ -14,7 +14,7 @@ defmodule Mix.Tasks.Todo do
       cond do
         Enum.member?(argv, "--all") -> :all
         Enum.member?(argv, "--overdue") -> :overdue
-        true -> TODO.config_default(:print)
+        true -> TODO.config_default(Mix.env(), :print)
       end
 
     app

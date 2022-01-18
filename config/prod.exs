@@ -1,2 +1,2 @@
 import Config
-config :todo, persist: true
+# config :todo, persist: true

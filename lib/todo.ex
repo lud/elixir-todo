@@ -6,11 +6,12 @@ defmodule TODO do
              |> String.split("<!-- moduledoc start -->")
              |> Enum.at(1)
 
-  def config_default(:persist), do: true
-  def config_default(:print), do: :overdue
+  def config_default(:prod, :persist), do: false
+  def config_default(_, :persist), do: true
+  def config_default(_, :print), do: :overdue
 
   def config(key) do
-    Application.get_env(:todo, key, config_default(key))
+    Application.get_env(:todo, key, config_default(Mix.env(), key))
   end
 
   def validate_print_conf(nil), do: :ok
@@ -22,23 +23,43 @@ defmodule TODO do
   end
 
   defmacro __using__(opts) do
-    persist_conf = false !== Keyword.get(opts, :persist, config(:persist))
+    custom_persist = warn_literal(Keyword.get(opts, :persist))
+    persist_conf = if custom_persist == nil, do: config(:persist), else: custom_persist
+    persist = false !== persist_conf
 
-    if persist_conf and Mix.env() not in ~w(dev test)a do
-      warn_persist_in_prod()
-    end
+    Module.register_attribute(__CALLER__.module, :todo,
+      accumulate: true,
+      persist: persist
+    )
 
     quote do
-      Module.register_attribute(__MODULE__, :todo,
-        accumulate: true,
-        persist: unquote(persist_conf)
-      )
+      mix_env = Mix.env()
+
+      if unquote(persist) and mix_env not in ~w(dev test)a do
+        TODO.warn_persist_in_prod(__MODULE__, mix_env)
+      end
 
       import TODO, only: [todo: 1]
     end
   end
 
-  defp warn_persist_in_prod() do
+  defp warn_literal(persist) when is_boolean(persist) when nil == persist, do: persist
+
+  defp warn_literal(other) do
+    """
+    The :persist configuration given to `use TODO` must be a literal boolean, got:
+
+        #{Macro.to_string(other)}
+
+    This is required to support calls to the `todo` macro in the module body scope.
+    """
+    |> IO.warn()
+
+    nil
+  end
+
+  @doc false
+  def warn_persist_in_prod(module, mix_env) do
     case :persistent_term.get(:todo_prod_warning, false) do
       true ->
         :ok
@@ -47,7 +68,7 @@ defmodule TODO do
         :persistent_term.put(:todo_prod_warning, true)
 
         IO.warn("""
-        TODO attributes are persisted whereas environment is neither :dev nor :test.
+        TODO attributes are persisted in module #{inspect(module)} whereas environment is neither :dev nor :test. (#{inspect(mix_env)})
 
         You can disable persistence in your configuration, for instance in
         config/prod.exs :
@@ -58,9 +79,8 @@ defmodule TODO do
   end
 
   defmacro todo(items) do
-    quote do
-      @todo unquote(items)
-    end
+    Module.put_attribute(__CALLER__.module, :todo, items)
+    []
   end
 
   def get_todos(module) when is_atom(module) do
