@@ -1,4 +1,4 @@
-# A simple Todo utiliy for Elixir
+# A simple Todo utility for Elixir
 
 <!-- moduledoc start -->
 
